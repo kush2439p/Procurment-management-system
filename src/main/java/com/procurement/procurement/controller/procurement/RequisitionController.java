@@ -1,63 +1,74 @@
-// Requisition controller
 package com.procurement.procurement.controller.procurement;
 
 import com.procurement.procurement.entity.procurement.Requisition;
-import com.procurement.procurement.repository.procurement.RequisitionRepository;
+import com.procurement.procurement.service.procurement.RequisitionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/procurement/requisition")
 public class RequisitionController {
 
-    private final RequisitionRepository requisitionRepository;
+    private final RequisitionService requisitionService;
 
-    public RequisitionController(RequisitionRepository requisitionRepository) {
-        this.requisitionRepository = requisitionRepository;
+    public RequisitionController(RequisitionService requisitionService) {
+        this.requisitionService = requisitionService;  // ← use SERVICE not repository directly
     }
 
-    // ===================== Create Requisition =====================
     @PostMapping("/create")
     public ResponseEntity<Requisition> createRequisition(@RequestBody Requisition requisition) {
-        requisition.setStatus("PENDING"); // Default status
-        Requisition savedReq = requisitionRepository.save(requisition);
-        return ResponseEntity.ok(savedReq);
+        return ResponseEntity.ok(requisitionService.createRequisition(requisition));
     }
 
-    // ===================== Get all Requisitions =====================
     @GetMapping("/all")
     public ResponseEntity<List<Requisition>> getAllRequisitions() {
-        List<Requisition> requisitions = requisitionRepository.findAll();
-        return ResponseEntity.ok(requisitions);
+        return ResponseEntity.ok(requisitionService.getAllRequisitions());
     }
 
-    // ===================== Get Requisition by ID =====================
     @GetMapping("/{id}")
     public ResponseEntity<?> getRequisitionById(@PathVariable Long id) {
-        Optional<Requisition> reqOpt = requisitionRepository.findById(id);
-        if(reqOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body("Requisition not found");
+        try {
+            // you can add a getById method in service, for now using getAllRequisitions filter
+            List<Requisition> all = requisitionService.getAllRequisitions();
+            return all.stream()
+                    .filter(r -> r.getId().equals(id))
+                    .findFirst()
+                    .<ResponseEntity<?>>map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.badRequest().body("Requisition not found"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-        return ResponseEntity.ok(reqOpt.get());
     }
 
-    // ===================== Update Requisition Status =====================
     @PatchMapping("/update-status/{id}")
     public ResponseEntity<String> updateRequisitionStatus(@PathVariable Long id,
                                                           @RequestParam String status) {
-        Optional<Requisition> reqOpt = requisitionRepository.findById(id);
-        if(reqOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body("Requisition not found");
+        try {
+            requisitionService.updateRequisition(id, buildStatusUpdate(status));
+            return ResponseEntity.ok("Requisition status updated to " + status);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+    // ===================== DEBUG - remove after fixing =====================
+    @GetMapping("/debug-roles")
+    public ResponseEntity<String> debugRoles() {
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder
+                        .getContext().getAuthentication();
 
-        Requisition requisition = reqOpt.get();
-        requisition.setStatus(status);
-        requisitionRepository.save(requisition);
+        String result = "User: " + auth.getName() +
+                " | Authorities: " + auth.getAuthorities().toString();
 
-        return ResponseEntity.ok("Requisition status updated to " + status);
+        return ResponseEntity.ok(result);
+    }
+
+    // helper to build a minimal update object just for status change
+    private Requisition buildStatusUpdate(String status) {
+        Requisition r = new Requisition();
+        r.setStatus(status);
+        return r;
     }
 }
-

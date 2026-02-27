@@ -1,9 +1,11 @@
-// Purchase order entity
 package com.procurement.procurement.entity.procurement;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.procurement.procurement.entity.vendor.Vendor;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -16,96 +18,58 @@ public class PurchaseOrder {
 
     private String poNumber;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vendor_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "purchaseOrders"})  // ← STOPS Vendor loop
     private Vendor vendor;
 
-    private String status; // PENDING, APPROVED, REJECTED, COMPLETED
-
+    private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "purchaseOrder", cascade = CascadeType.ALL)
-    private List<PurchaseOrderItem> items;
+    @OneToMany(mappedBy = "purchaseOrder", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PurchaseOrderItem> items = new ArrayList<>();
 
-    @OneToMany(mappedBy = "purchaseOrder", cascade = CascadeType.ALL)
-    private List<Approval> approvals;
+    @JsonIgnore  // ← STOPS PurchaseOrder → Approval → PurchaseOrder loop
+    @OneToMany(mappedBy = "purchaseOrder", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Approval> approvals = new ArrayList<>();
 
-    public PurchaseOrder() {
+    public PurchaseOrder() {}
+
+    // helper to properly link items
+    public void addItem(PurchaseOrderItem item) {
+        if (item != null) {
+            this.items.add(item);
+            item.setPurchaseOrder(this);
+        }
     }
 
-    public PurchaseOrder(String poNumber, Vendor vendor, String status, LocalDateTime createdAt, LocalDateTime updatedAt, List<PurchaseOrderItem> items, List<Approval> approvals) {
-        this.poNumber = poNumber;
-        this.vendor = vendor;
-        this.status = status;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.items = items;
-        this.approvals = approvals;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    // ===================== Getters & Setters =====================
-    public Long getId() {
-        return id;
-    }
+    public String getPoNumber() { return poNumber; }
+    public void setPoNumber(String poNumber) { this.poNumber = poNumber; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public Vendor getVendor() { return vendor; }
+    public void setVendor(Vendor vendor) { this.vendor = vendor; }
 
-    public String getPoNumber() {
-        return poNumber;
-    }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 
-    public void setPoNumber(String poNumber) {
-        this.poNumber = poNumber;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public Vendor getVendor() {
-        return vendor;
-    }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
-    public void setVendor(Vendor vendor) {
-        this.vendor = vendor;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public List<PurchaseOrderItem> getItems() {
-        return items;
-    }
-
+    public List<PurchaseOrderItem> getItems() { return items; }
     public void setItems(List<PurchaseOrderItem> items) {
-        this.items = items;
+        this.items.clear();
+        if (items != null) {
+            items.forEach(this::addItem);
+        }
     }
 
-    public List<Approval> getApprovals() {
-        return approvals;
-    }
-
-    public void setApprovals(List<Approval> approvals) {
-        this.approvals = approvals;
-    }
+    public List<Approval> getApprovals() { return approvals; }
+    public void setApprovals(List<Approval> approvals) { this.approvals = approvals; }
 }

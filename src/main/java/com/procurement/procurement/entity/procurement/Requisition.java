@@ -1,5 +1,7 @@
 package com.procurement.procurement.entity.procurement;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.procurement.procurement.entity.user.User;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -16,33 +18,31 @@ public class Requisition {
 
     private String requisitionNumber;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "requested_by")
+    @JsonIgnoreProperties({"roles", "permissions", "password", "authorities", "requisitions"})  // ← STOPS USER EXPLOSION
     private User requestedBy;
 
-    private String status; // PENDING, APPROVED, REJECTED, COMPLETED
-
+    private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // ✅ Initialized to ArrayList to prevent null issues
     @OneToMany(mappedBy = "requisition", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RequisitionItem> items = new ArrayList<>();
 
+    @JsonIgnore  // ← STOPS APPROVAL LOOP (approvals → requisition → approvals → ...)
     @OneToMany(mappedBy = "requisition", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Approval> approvals = new ArrayList<>();
 
     public Requisition() {}
 
-    // ===================== Helper Method (The Magic Fix) =====================
     public void addRequisitionItem(RequisitionItem item) {
         if (item != null) {
             this.items.add(item);
-            item.setRequisition(this); // 🔥 This sets the requisition_id column!
+            item.setRequisition(this);
         }
     }
 
-    // ===================== Getters & Setters =====================
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

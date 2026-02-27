@@ -1,6 +1,6 @@
-// Vendor rating entity
 package com.procurement.procurement.entity.vendor;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
@@ -11,15 +11,15 @@ public class VendorRating {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Integer rating; // e.g., 1-5
-    private String feedback; // vendor ke liye comments ya notes
+    private Integer rating;
+    private String feedback;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vendor_id")
+    @JsonIgnore  // ← STOPS VendorRating → Vendor → ratings → VendorRating loop
     private Vendor vendor;
 
-    public VendorRating() {
-    }
+    public VendorRating() {}
 
     public VendorRating(Integer rating, String feedback, Vendor vendor) {
         this.rating = rating;
@@ -27,36 +27,15 @@ public class VendorRating {
         this.vendor = vendor;
     }
 
-    // ===================== Getters & Setters =====================
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public Integer getRating() { return rating; }
+    public void setRating(Integer rating) { this.rating = rating; }
 
-    public Integer getRating() {
-        return rating;
-    }
+    public String getFeedback() { return feedback; }
+    public void setFeedback(String feedback) { this.feedback = feedback; }
 
-    public void setRating(Integer rating) {
-        this.rating = rating;
-    }
-
-    public String getFeedback() {
-        return feedback;
-    }
-
-    public void setFeedback(String feedback) {
-        this.feedback = feedback;
-    }
-
-    public Vendor getVendor() {
-        return vendor;
-    }
-
-    public void setVendor(Vendor vendor) {
-        this.vendor = vendor;
-    }
+    public Vendor getVendor() { return vendor; }
+    public void setVendor(Vendor vendor) { this.vendor = vendor; }
 }

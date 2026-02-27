@@ -1,6 +1,6 @@
-// Vendor document entity
 package com.procurement.procurement.entity.vendor;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
@@ -11,19 +11,20 @@ public class VendorDocument {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String documentName;  // e.g., "PAN Card", "GST Certificate"
-    private String documentType;  // e.g., "PDF", "IMAGE"
-    private String documentUrl;   // path ya link jahan document store hai
-    private boolean verified;     // document verified or not
+    private String documentName;
+    private String documentType;
+    private String documentUrl;
+    private boolean verified;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vendor_id")
+    @JsonIgnore  // ← STOPS VendorDocument → Vendor → documents → VendorDocument loop
     private Vendor vendor;
 
-    public VendorDocument() {
-    }
+    public VendorDocument() {}
 
-    public VendorDocument(String documentName, String documentType, String documentUrl, boolean verified, Vendor vendor) {
+    public VendorDocument(String documentName, String documentType,
+                          String documentUrl, boolean verified, Vendor vendor) {
         this.documentName = documentName;
         this.documentType = documentType;
         this.documentUrl = documentUrl;
@@ -31,52 +32,21 @@ public class VendorDocument {
         this.vendor = vendor;
     }
 
-    // ===================== Getters & Setters =====================
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getDocumentName() { return documentName; }
+    public void setDocumentName(String documentName) { this.documentName = documentName; }
 
-    public String getDocumentName() {
-        return documentName;
-    }
+    public String getDocumentType() { return documentType; }
+    public void setDocumentType(String documentType) { this.documentType = documentType; }
 
-    public void setDocumentName(String documentName) {
-        this.documentName = documentName;
-    }
+    public String getDocumentUrl() { return documentUrl; }
+    public void setDocumentUrl(String documentUrl) { this.documentUrl = documentUrl; }
 
-    public String getDocumentType() {
-        return documentType;
-    }
+    public boolean isVerified() { return verified; }
+    public void setVerified(boolean verified) { this.verified = verified; }
 
-    public void setDocumentType(String documentType) {
-        this.documentType = documentType;
-    }
-
-    public String getDocumentUrl() {
-        return documentUrl;
-    }
-
-    public void setDocumentUrl(String documentUrl) {
-        this.documentUrl = documentUrl;
-    }
-
-    public boolean isVerified() {
-        return verified;
-    }
-
-    public void setVerified(boolean verified) {
-        this.verified = verified;
-    }
-
-    public Vendor getVendor() {
-        return vendor;
-    }
-
-    public void setVendor(Vendor vendor) {
-        this.vendor = vendor;
-    }
+    public Vendor getVendor() { return vendor; }
+    public void setVendor(Vendor vendor) { this.vendor = vendor; }
 }

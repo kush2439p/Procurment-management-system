@@ -1,12 +1,11 @@
 package com.procurement.procurement.controller.procurement;
 
 import com.procurement.procurement.entity.procurement.PurchaseOrder;
-import com.procurement.procurement.entity.procurement.PurchaseOrderItem;
 import com.procurement.procurement.repository.procurement.PurchaseOrderRepository;
-import com.procurement.procurement.repository.procurement.PurchaseOrderItemRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,36 +14,34 @@ import java.util.Optional;
 public class PurchaseOrderController {
 
     private final PurchaseOrderRepository purchaseOrderRepository;
-    private final PurchaseOrderItemRepository purchaseOrderItemRepository;
 
-    public PurchaseOrderController(PurchaseOrderRepository purchaseOrderRepository,
-                                   PurchaseOrderItemRepository purchaseOrderItemRepository) {
+    public PurchaseOrderController(PurchaseOrderRepository purchaseOrderRepository) {
         this.purchaseOrderRepository = purchaseOrderRepository;
-        this.purchaseOrderItemRepository = purchaseOrderItemRepository;
     }
 
     // ===================== Create Purchase Order =====================
     @PostMapping("/create")
-    public ResponseEntity<PurchaseOrder> createPurchaseOrder(@RequestBody PurchaseOrder purchaseOrder) {
-        // Save purchase order first
-        PurchaseOrder po = purchaseOrderRepository.save(purchaseOrder);
+    public ResponseEntity<PurchaseOrder> createPurchaseOrder(
+            @RequestBody PurchaseOrder purchaseOrder) {
 
-        // Save items if present
-        if (po.getItems() != null) {
-            for (PurchaseOrderItem item : po.getItems()) {
-                item.setPurchaseOrder(po);
-                purchaseOrderItemRepository.save(item);
-            }
+        purchaseOrder.setCreatedAt(LocalDateTime.now());
+        purchaseOrder.setUpdatedAt(LocalDateTime.now());
+
+        // ✅ Properly link each item back to the parent PO
+        if (purchaseOrder.getItems() != null) {
+            purchaseOrder.getItems().forEach(item ->
+                    item.setPurchaseOrder(purchaseOrder)
+            );
         }
 
-        return ResponseEntity.ok(po);
+        PurchaseOrder saved = purchaseOrderRepository.save(purchaseOrder);
+        return ResponseEntity.ok(saved);
     }
 
     // ===================== Get all Purchase Orders =====================
     @GetMapping("/all")
     public ResponseEntity<List<PurchaseOrder>> getAllPurchaseOrders() {
-        List<PurchaseOrder> orders = purchaseOrderRepository.findAll();
-        return ResponseEntity.ok(orders);
+        return ResponseEntity.ok(purchaseOrderRepository.findAll());
     }
 
     // ===================== Get Purchase Order by ID =====================
@@ -68,6 +65,7 @@ public class PurchaseOrderController {
 
         PurchaseOrder po = poOpt.get();
         po.setStatus(status);
+        po.setUpdatedAt(LocalDateTime.now());
         purchaseOrderRepository.save(po);
 
         return ResponseEntity.ok("Purchase Order status updated to " + status);
