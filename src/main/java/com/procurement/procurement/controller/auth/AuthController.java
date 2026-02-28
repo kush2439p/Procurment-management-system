@@ -20,75 +20,73 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private final AuthenticationManager authenticationManager;
-    private final JwtTokenProvider jwtTokenProvider;
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final RoleRepository roleRepository; // ✅ ADDED
+        private final AuthenticationManager authenticationManager;
+        private final JwtTokenProvider jwtTokenProvider;
+        private final UserRepository userRepository;
+        private final PasswordEncoder passwordEncoder;
+        private final RoleRepository roleRepository; // ✅ ADDED
 
-    public AuthController(AuthenticationManager authenticationManager,
-                          JwtTokenProvider jwtTokenProvider,
-                          UserRepository userRepository,
-                          PasswordEncoder passwordEncoder,
-                          RoleRepository roleRepository) { // ✅ ADDED
-        this.authenticationManager = authenticationManager;
-        this.jwtTokenProvider = jwtTokenProvider;
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.roleRepository = roleRepository; // ✅ ADDED
-    }
-
-    // ===================== LOGIN =====================
-    @PostMapping("/login")
-    public ResponseEntity<AuthResponseDTO> login(@RequestBody LoginRequestDTO loginRequest) {
-
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequest.getUsername(),
-                        loginRequest.getPassword()
-                )
-        );
-
-        User user = userRepository.findByUsername(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        String token = jwtTokenProvider.generateToken(user.getUsername());
-
-        AuthResponseDTO response = new AuthResponseDTO();
-        response.setToken(token);
-        response.setType("Bearer");
-        response.setUsername(user.getUsername());
-        response.setRoles(
-                user.getRoles().stream()
-                        .map(r -> r.getName())
-                        .collect(Collectors.toSet())
-        );
-
-        return ResponseEntity.ok(response);
-    }
-
-    // ===================== REGISTER =====================
-    @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody LoginRequestDTO request) {
-
-        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-            return ResponseEntity.badRequest().body("Username already exists");
+        public AuthController(AuthenticationManager authenticationManager,
+                        JwtTokenProvider jwtTokenProvider,
+                        UserRepository userRepository,
+                        PasswordEncoder passwordEncoder,
+                        RoleRepository roleRepository) { // ✅ ADDED
+                this.authenticationManager = authenticationManager;
+                this.jwtTokenProvider = jwtTokenProvider;
+                this.userRepository = userRepository;
+                this.passwordEncoder = passwordEncoder;
+                this.roleRepository = roleRepository; // ✅ ADDED
         }
 
-        // ✅ Auto assign ROLE_ADMIN — change to ROLE_EMPLOYEE for normal users
-        Role defaultRole = roleRepository.findByName("ROLE_ADMIN")
-                .orElseThrow(() -> new RuntimeException(
-                        "ROLE_ADMIN not found in DB! Please insert it first."));
+        // ===================== LOGIN =====================
+        @PostMapping("/login")
+        public ResponseEntity<AuthResponseDTO> login(@RequestBody LoginRequestDTO loginRequest) {
 
-        User user = new User();
-        user.setUsername(request.getUsername());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setEmail(request.getUsername() + "@procurement.com");
-        user.setEnabled(true);
-        user.addRole(defaultRole); // ✅ Role is now assigned on register
+                Authentication authentication = authenticationManager.authenticate(
+                                new UsernamePasswordAuthenticationToken(
+                                                loginRequest.getUsername(),
+                                                loginRequest.getPassword()));
 
-        userRepository.save(user);
+                User user = userRepository.findByUsername(authentication.getName())
+                                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return ResponseEntity.ok("User registered successfully as " + defaultRole.getName());
-    }
+                String token = jwtTokenProvider.generateToken(user.getUsername());
+
+                AuthResponseDTO response = new AuthResponseDTO();
+                response.setId(user.getId());
+                response.setToken(token);
+                response.setType("Bearer");
+                response.setUsername(user.getUsername());
+                response.setRoles(
+                                user.getRoles().stream()
+                                                .map(r -> r.getName())
+                                                .collect(Collectors.toSet()));
+
+                return ResponseEntity.ok(response);
+        }
+
+        // ===================== REGISTER =====================
+        @PostMapping("/register")
+        public ResponseEntity<String> register(@RequestBody LoginRequestDTO request) {
+
+                if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+                        return ResponseEntity.badRequest().body("Username already exists");
+                }
+
+                // ✅ Auto assign ROLE_ADMIN — change to ROLE_EMPLOYEE for normal users
+                Role defaultRole = roleRepository.findByName("ROLE_ADMIN")
+                                .orElseThrow(() -> new RuntimeException(
+                                                "ROLE_ADMIN not found in DB! Please insert it first."));
+
+                User user = new User();
+                user.setUsername(request.getUsername());
+                user.setPassword(passwordEncoder.encode(request.getPassword()));
+                user.setEmail(request.getUsername() + "@procurement.com");
+                user.setEnabled(true);
+                user.addRole(defaultRole); // ✅ Role is now assigned on register
+
+                userRepository.save(user);
+
+                return ResponseEntity.ok("User registered successfully as " + defaultRole.getName());
+        }
 }

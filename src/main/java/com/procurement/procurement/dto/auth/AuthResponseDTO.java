@@ -4,6 +4,7 @@ import java.util.Set;
 
 public class AuthResponseDTO {
 
+    private Long id;
     private String token;
     private String type;
     private String username;
@@ -18,6 +19,14 @@ public class AuthResponseDTO {
     }
 
     // ===================== Getters & Setters =====================
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public String getToken() {
         return token;

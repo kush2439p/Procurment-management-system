@@ -11,7 +11,7 @@ import { ArrowLeft } from 'lucide-react';
 const PurchaseOrderDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAdmin, isManager } = useAuth();
+  const { isAdmin, isManager, userId } = useAuth();
   const canApprove = isAdmin() || isManager();
   const [po, setPo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -24,7 +24,7 @@ const PurchaseOrderDetail = () => {
 
   const approve = async () => {
     try {
-      await API.post(`/procurement/approval/approve/${id}?approverId=1`);
+      await API.post(`/procurement/approval/approve/${id}?approverId=${userId || 1}`);
       toast.success('Purchase order approved');
       setPo({ ...po, status: 'APPROVED' });
     } catch { toast.error('Failed'); }
@@ -32,7 +32,7 @@ const PurchaseOrderDetail = () => {
 
   const reject = async () => {
     try {
-      await API.post(`/procurement/approval/reject/${id}?approverId=1&reason=${encodeURIComponent(rejectReason)}`);
+      await API.post(`/procurement/approval/reject/${id}?approverId=${userId || 1}&reason=${encodeURIComponent(rejectReason)}`);
       toast.success('Purchase order rejected');
       setPo({ ...po, status: 'REJECTED' });
       setShowReject(false);

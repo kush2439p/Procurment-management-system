@@ -4,6 +4,7 @@ import API from '@/api/axiosInstance';
 interface AuthState {
   token: string | null;
   username: string | null;
+  userId: number | null;
   roles: string[];
 }
 
@@ -30,6 +31,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [auth, setAuth] = useState<AuthState>(() => ({
     token: localStorage.getItem('procurementToken'),
     username: localStorage.getItem('procurementUser'),
+    userId: localStorage.getItem('procurementUserId') ? Number(localStorage.getItem('procurementUserId')) : null,
     roles: JSON.parse(localStorage.getItem('procurementRoles') || '[]'),
   }));
 
@@ -37,16 +39,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data } = await API.post('/api/auth/login', { username, password });
     localStorage.setItem('procurementToken', data.token);
     localStorage.setItem('procurementUser', data.username);
+    localStorage.setItem('procurementUserId', String(data.id));
     localStorage.setItem('procurementRoles', JSON.stringify(data.roles));
-    setAuth({ token: data.token, username: data.username, roles: data.roles });
+    setAuth({ token: data.token, username: data.username, userId: data.id, roles: data.roles });
   }, []);
 
   const demoLogin = useCallback(() => {
     const demoRoles = ['ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_PROCUREMENT_MANAGER'];
     localStorage.setItem('procurementToken', 'demo-token');
     localStorage.setItem('procurementUser', 'demo_admin');
+    localStorage.setItem('procurementUserId', '1');
     localStorage.setItem('procurementRoles', JSON.stringify(demoRoles));
-    setAuth({ token: 'demo-token', username: 'demo_admin', roles: demoRoles });
+    setAuth({ token: 'demo-token', username: 'demo_admin', userId: 1, roles: demoRoles });
   }, []);
 
   const register = useCallback(async (username: string, password: string) => {
@@ -58,7 +62,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('procurementToken');
     localStorage.removeItem('procurementRoles');
     localStorage.removeItem('procurementUser');
-    setAuth({ token: null, username: null, roles: [] });
+    localStorage.removeItem('procurementUserId');
+    setAuth({ token: null, username: null, userId: null, roles: [] });
   }, []);
 
   const isAdmin = () => auth.roles.includes('ROLE_ADMIN');

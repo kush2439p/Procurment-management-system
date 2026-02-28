@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { AnimatedPage } from '@/components/AnimatedPage';
+import { useAuth } from '@/context/AuthContext';
 import API from '@/api/axiosInstance';
 import { toast } from 'sonner';
 import { ArrowLeft, Plus, X } from 'lucide-react';
@@ -10,6 +11,7 @@ interface Item { itemName: string; description: string; quantity: number; unitPr
 
 const RequisitionForm = () => {
   const navigate = useNavigate();
+  const { userId } = useAuth();
   const [reqNumber, setReqNumber] = useState('');
   const [items, setItems] = useState<Item[]>([{ itemName: '', description: '', quantity: 1, unitPrice: 0 }]);
   const [loading, setLoading] = useState(false);
@@ -29,7 +31,7 @@ const RequisitionForm = () => {
       await API.post('/procurement/requisition/create', {
         requisitionNumber: reqNumber,
         status: 'PENDING',
-        requestedBy: { id: 1 },
+        requestedBy: { id: userId || 1 },
         items,
       });
       toast.success('Requisition created');

@@ -4,10 +4,9 @@ import { motion } from 'framer-motion';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/AnimatedPage';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
-import { useAuth } from '@/context/AuthContext';
 import API from '@/api/axiosInstance';
 import { toast } from 'sonner';
-import { Plus, Eye, FileText } from 'lucide-react';
+import { Plus, Eye, FileText, Package } from 'lucide-react';
 
 const Requisitions = () => {
   const [reqs, setReqs] = useState<any[]>([]);
@@ -16,54 +15,122 @@ const Requisitions = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    API.get('/procurement/requisition/all').then(({ data }) => setReqs(data || [])).catch(() => toast.error('Failed to load')).finally(() => setLoading(false));
+    API.get('/procurement/requisition/all')
+      .then(({ data }) => setReqs(data || []))
+      .catch(() => toast.error('Failed to load requisitions'))
+      .finally(() => setLoading(false));
   }, []);
 
   const filtered = filter === 'ALL' ? reqs : reqs.filter(r => r.status === filter);
 
+  const filterCounts = ['ALL', 'PENDING', 'APPROVED', 'REJECTED'].map(s => ({
+    label: s,
+    count: s === 'ALL' ? reqs.length : reqs.filter(r => r.status === s).length,
+  }));
+
   return (
     <AnimatedPage>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <div>
           <h1 className="page-title">Requisitions</h1>
           <p className="page-subtitle">Track and manage purchase requisitions</p>
         </div>
-        <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => navigate('/requisitions/new')} className="btn-primary flex items-center gap-2">
+        <motion.button
+          whileHover={{ scale: 1.03, y: -1 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={() => navigate('/requisitions/new')}
+          className="btn-primary flex items-center gap-2 shrink-0"
+        >
           <Plus className="w-4 h-4" /> New Requisition
         </motion.button>
       </div>
 
-      <div className="flex gap-2 mb-4">
-        {['ALL', 'PENDING', 'APPROVED', 'REJECTED'].map(s => (
-          <button key={s} onClick={() => setFilter(s)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filter === s ? 'bg-primary text-primary-foreground' : 'bg-accent text-muted-foreground hover:text-foreground'}`}>
-            {s}
-          </button>
+      {/* Filter Tabs */}
+      <div className="flex gap-2 mb-5 flex-wrap">
+        {filterCounts.map(({ label, count }) => (
+          <motion.button
+            key={label}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setFilter(label)}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200"
+            style={filter === label ? {
+              background: 'linear-gradient(135deg, hsl(252,87%,67%),hsl(265,85%,58%))',
+              color: 'white',
+              boxShadow: '0 4px 15px hsla(252,87%,67%,0.3)',
+            } : {
+              background: 'hsla(218,27%,14%,0.7)',
+              color: 'hsl(215,20%,55%)',
+              border: '1px solid rgba(255,255,255,0.05)',
+            }}
+          >
+            {label}
+            <span className="rounded-full px-1.5 py-0.5 text-[10px]" style={{ background: 'rgba(255,255,255,0.15)' }}>{count}</span>
+          </motion.button>
         ))}
       </div>
 
       {loading ? <TableSkeleton cols={5} /> : filtered.length === 0 ? (
-        <div className="glass-card p-12 text-center">
-          <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground">No requisitions found</p>
+        <div className="glass-card p-14 text-center">
+          <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: 'hsla(38,92%,50%,0.1)' }}>
+            <FileText className="w-8 h-8" style={{ color: 'hsl(38,92%,60%)' }} />
+          </div>
+          <p className="font-semibold mb-1" style={{ color: 'hsl(214,32%,80%)' }}>No requisitions found</p>
+          <p className="text-sm" style={{ color: 'hsl(215,20%,45%)' }}>
+            {filter !== 'ALL' ? `No ${filter.toLowerCase()} requisitions` : 'Create your first requisition to get started'}
+          </p>
+          {filter === 'ALL' && <button onClick={() => navigate('/requisitions/new')} className="mt-5 btn-primary text-sm px-5 py-2.5">Create Requisition</button>}
         </div>
       ) : (
-        <div className="glass-card overflow-x-auto">
-          <motion.table variants={staggerContainer} initial="initial" animate="animate" className="data-table">
-            <thead><tr><th>Req #</th><th>Requested By</th><th>Items</th><th>Status</th><th>Actions</th></tr></thead>
+        <div className="glass-card overflow-hidden">
+          <motion.table variants={staggerContainer} initial="initial" animate="animate" className="data-table w-full">
+            <thead>
+              <tr>
+                <th>Req #</th>
+                <th>Requested By</th>
+                <th>Items</th>
+                <th>Total Value</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
             <tbody>
-              {filtered.map(r => (
-                <motion.tr key={r.id} variants={staggerItem}>
-                  <td className="font-medium text-foreground">{r.requisitionNumber}</td>
-                  <td>{r.requestedBy?.username || `User #${r.requestedBy?.id}`}</td>
-                  <td>{r.items?.length || 0} items</td>
-                  <td><StatusBadge status={r.status} /></td>
-                  <td>
-                    <button onClick={() => navigate(`/requisitions/${r.id}`)} className="p-1.5 rounded-lg hover:bg-accent transition-colors">
-                      <Eye className="w-4 h-4 text-primary" />
-                    </button>
-                  </td>
-                </motion.tr>
-              ))}
+              {filtered.map(r => {
+                const total = r.items?.reduce((s: number, i: any) => s + (i.quantity * i.unitPrice), 0) || 0;
+                return (
+                  <motion.tr key={r.id} variants={staggerItem}>
+                    <td>
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'hsla(38,92%,50%,0.12)' }}>
+                          <FileText className="w-3.5 h-3.5" style={{ color: 'hsl(38,92%,60%)' }} />
+                        </div>
+                        <span className="font-semibold text-sm" style={{ color: 'hsl(214,32%,88%)' }}>{r.requisitionNumber}</span>
+                      </div>
+                    </td>
+                    <td className="text-sm">{r.requestedBy?.username || `User #${r.requestedBy?.id}`}</td>
+                    <td>
+                      <div className="flex items-center gap-1.5 text-sm">
+                        <Package className="w-3.5 h-3.5" style={{ color: 'hsl(215,20%,50%)' }} />
+                        {r.items?.length || 0}
+                      </div>
+                    </td>
+                    <td className="text-sm font-semibold" style={{ color: 'hsl(160,84%,55%)' }}>
+                      ${total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+                    <td><StatusBadge status={r.status} /></td>
+                    <td>
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => navigate(`/requisitions/${r.id}`)}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                        style={{ background: 'hsla(252,87%,67%,0.1)' }}
+                      >
+                        <Eye className="w-3.5 h-3.5" style={{ color: 'hsl(252,87%,72%)' }} />
+                      </motion.button>
+                    </td>
+                  </motion.tr>
+                );
+              })}
             </tbody>
           </motion.table>
         </div>

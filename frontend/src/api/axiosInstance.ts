@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API = axios.create({ baseURL: 'http://localhost:8082' });
+// Use relative URL so Vite's proxy forwards requests to backend (avoids CORS)
+const API = axios.create({ baseURL: '/' });
 
 API.interceptors.request.use(cfg => {
   const token = localStorage.getItem('procurementToken');
@@ -15,6 +16,7 @@ API.interceptors.response.use(
       localStorage.removeItem('procurementToken');
       localStorage.removeItem('procurementRoles');
       localStorage.removeItem('procurementUser');
+      localStorage.removeItem('procurementUserId');
       window.location.href = '/login';
     }
     return Promise.reject(err);

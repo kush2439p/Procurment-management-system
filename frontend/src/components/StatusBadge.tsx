@@ -5,10 +5,24 @@ interface StatusBadgeProps {
 export const StatusBadge = ({ status }: StatusBadgeProps) => {
   const s = status?.toUpperCase();
   const cls =
-    s === 'APPROVED' || s === 'ACTIVE' ? 'status-approved' :
-    s === 'PENDING' ? 'status-pending' :
-    s === 'REJECTED' || s === 'INACTIVE' ? 'status-rejected' :
-    'status-pending';
+    s === 'APPROVED' ? 'badge-approved' :
+      s === 'ACTIVE' ? 'badge-active' :
+        s === 'PENDING' ? 'badge-pending' :
+          s === 'REJECTED' ? 'badge-rejected' :
+            s === 'INACTIVE' ? 'badge-inactive' :
+              'badge-pending';
 
-  return <span className={cls}>{status}</span>;
+  const dot =
+    s === 'APPROVED' ? '🟢' :
+      s === 'ACTIVE' ? '🔵' :
+        s === 'PENDING' ? '🟡' :
+          s === 'REJECTED' ? '🔴' :
+            s === 'INACTIVE' ? '⚫' : '🟡';
+
+  return (
+    <span className={cls}>
+      <span className="text-[8px]">{dot}</span>
+      {status}
+    </span>
+  );
 };
