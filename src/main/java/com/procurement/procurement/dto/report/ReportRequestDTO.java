@@ -5,10 +5,11 @@ import java.time.LocalDate;
 
 public class ReportRequestDTO {
 
-    private Long vendorId;       // Optional: filter by vendor
-    private Long poId;           // Optional: filter by purchase order
+    private Long vendorId; // Optional: filter by vendor
+    private Long poId; // Optional: filter by purchase order ID
+    private String poNumber; // Optional: filter by PO number (e.g. "po-123")
     private LocalDate startDate; // Optional: report start date
-    private LocalDate endDate;   // Optional: report end date
+    private LocalDate endDate; // Optional: report end date
 
     public ReportRequestDTO() {
     }
@@ -35,6 +36,14 @@ public class ReportRequestDTO {
 
     public void setPoId(Long poId) {
         this.poId = poId;
+    }
+
+    public String getPoNumber() {
+        return poNumber;
+    }
+
+    public void setPoNumber(String poNumber) {
+        this.poNumber = poNumber;
     }
 
     public LocalDate getStartDate() {

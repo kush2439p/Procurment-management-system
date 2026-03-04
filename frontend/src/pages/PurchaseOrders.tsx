@@ -26,7 +26,7 @@ const PurchaseOrders = () => {
 
   const filtered = filter === 'ALL' ? pos : pos.filter(p => p.status === filter);
 
-  const filterCounts = ['ALL', 'PENDING', 'APPROVED', 'REJECTED'].map(s => ({
+  const filterCounts = ['ALL', 'PENDING', 'APPROVED', 'SHIPPED', 'DELIVERED', 'REJECTED'].map(s => ({
     label: s,
     count: s === 'ALL' ? pos.length : pos.filter(p => p.status === s).length,
   }));
@@ -95,7 +95,8 @@ const PurchaseOrders = () => {
                 <th>PO #</th>
                 <th>Vendor</th>
                 <th>Items</th>
-                <th>Total Value</th>
+                <th>Total</th>
+                <th>Created</th>
                 <th>Status</th>
                 <th>Action</th>
               </tr>
@@ -126,7 +127,10 @@ const PurchaseOrders = () => {
                       </div>
                     </td>
                     <td className="text-sm font-semibold" style={{ color: 'hsl(160,84%,55%)' }}>
-                      ${total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      ₹{total.toLocaleString('en-IN')}
+                    </td>
+                    <td className="text-xs" style={{ color: 'hsl(215,20%,50%)' }}>
+                      {po.createdAt ? new Date(po.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                     </td>
                     <td><StatusBadge status={po.status} /></td>
                     <td>

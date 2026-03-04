@@ -6,20 +6,40 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
 import API from '@/api/axiosInstance';
 import { toast } from 'sonner';
-import { Plus, Eye, FileText, Package } from 'lucide-react';
+import { Plus, Eye, FileText, Package, Trash2 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 const Requisitions = () => {
   const [reqs, setReqs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('ALL');
   const navigate = useNavigate();
+  const { roles, username } = useAuth();
+  const isManagerOrAdmin = roles.includes('ROLE_PROCUREMENT_MANAGER') || roles.includes('ROLE_ADMIN');
 
-  useEffect(() => {
-    API.get('/procurement/requisition/all')
+  const loadReqs = () => {
+    const endpoint = isManagerOrAdmin
+      ? '/procurement/requisition/all'
+      : '/procurement/requisition/my';
+    API.get(endpoint)
       .then(({ data }) => setReqs(data || []))
       .catch(() => toast.error('Failed to load requisitions'))
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { loadReqs(); }, [isManagerOrAdmin]);
+
+  const deleteReq = async (id: number, status: string, ownerUsername: string) => {
+    if (!isManagerOrAdmin && (status !== 'PENDING' || ownerUsername !== username)) return;
+    if (!confirm('Delete this requisition? This cannot be undone.')) return;
+    try {
+      await API.delete(`/procurement/requisition/delete/${id}`);
+      toast.success('Requisition deleted');
+      loadReqs();
+    } catch (err: any) {
+      toast.error(err.response?.data || 'Failed to delete');
+    }
+  };
 
   const filtered = filter === 'ALL' ? reqs : reqs.filter(r => r.status === filter);
 
@@ -118,15 +138,28 @@ const Requisitions = () => {
                     </td>
                     <td><StatusBadge status={r.status} /></td>
                     <td>
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => navigate(`/requisitions/${r.id}`)}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
-                        style={{ background: 'hsla(252,87%,67%,0.1)' }}
-                      >
-                        <Eye className="w-3.5 h-3.5" style={{ color: 'hsl(252,87%,72%)' }} />
-                      </motion.button>
+                      <div className="flex items-center gap-1">
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => navigate(`/requisitions/${r.id}`)}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                          style={{ background: 'hsla(252,87%,67%,0.1)' }}
+                        >
+                          <Eye className="w-3.5 h-3.5" style={{ color: 'hsl(252,87%,72%)' }} />
+                        </motion.button>
+                        {(isManagerOrAdmin || (r.status === 'PENDING' && r.requestedBy?.username === username)) && (
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => deleteReq(r.id, r.status, r.requestedBy?.username)}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                            style={{ background: 'hsla(0,84%,60%,0.1)' }}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" style={{ color: 'hsl(0,84%,65%)' }} />
+                          </motion.button>
+                        )}
+                      </div>
                     </td>
                   </motion.tr>
                 );

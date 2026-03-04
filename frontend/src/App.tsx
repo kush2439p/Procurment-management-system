@@ -19,6 +19,9 @@ import PurchaseOrderForm from "./pages/PurchaseOrderForm";
 import PurchaseOrderDetail from "./pages/PurchaseOrderDetail";
 import Approvals from "./pages/Approvals";
 import Reports from "./pages/Reports";
+import AdminPanel from "./pages/AdminPanel";
+import VendorLogin from "./pages/VendorLogin";
+import VendorPortal from "./pages/VendorPortal";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +43,7 @@ const AppRoutes = () => (
     <Routes>
       <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/vendor-login" element={<PublicRoute><VendorLogin /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/vendors" element={<ProtectedRoute><Vendors /></ProtectedRoute>} />
@@ -53,6 +57,8 @@ const AppRoutes = () => (
       <Route path="/purchase-orders/:id" element={<ProtectedRoute><PurchaseOrderDetail /></ProtectedRoute>} />
       <Route path="/approvals" element={<ProtectedRoute><Approvals /></ProtectedRoute>} />
       <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+      <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+      <Route path="/vendor-portal" element={<ProtectedRoute><VendorPortal /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   </AnimatePresence>

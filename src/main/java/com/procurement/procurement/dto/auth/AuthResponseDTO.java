@@ -1,6 +1,6 @@
 package com.procurement.procurement.dto.auth;
 
-import java.util.Set;
+import java.util.List;
 
 public class AuthResponseDTO {
 
@@ -8,7 +8,7 @@ public class AuthResponseDTO {
     private String token;
     private String type;
     private String username;
-    private Set<String> roles;
+    private List<String> roles;
 
     public AuthResponseDTO() {
     }
@@ -52,11 +52,11 @@ public class AuthResponseDTO {
         this.username = username;
     }
 
-    public Set<String> getRoles() {
+    public List<String> getRoles() {
         return roles;
     }
 
-    public void setRoles(Set<String> roles) {
+    public void setRoles(List<String> roles) {
         this.roles = roles;
     }
 }

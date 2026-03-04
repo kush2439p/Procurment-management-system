@@ -7,37 +7,53 @@ import API from '@/api/axiosInstance';
 import { toast } from 'sonner';
 import { ArrowLeft, Plus, X } from 'lucide-react';
 
-interface Item { itemName: string; description: string; quantity: number; unitPrice: number; }
+// ✅ Store as strings during editing so user can clear and retype freely
+interface Item { itemName: string; description: string; quantity: string; unitPrice: string; }
 
 const RequisitionForm = () => {
   const navigate = useNavigate();
   const { userId } = useAuth();
   const [reqNumber, setReqNumber] = useState('');
-  const [items, setItems] = useState<Item[]>([{ itemName: '', description: '', quantity: 1, unitPrice: 0 }]);
+  const [items, setItems] = useState<Item[]>([{ itemName: '', description: '', quantity: '1', unitPrice: '' }]);
   const [loading, setLoading] = useState(false);
 
-  const addItem = () => setItems([...items, { itemName: '', description: '', quantity: 1, unitPrice: 0 }]);
+  const addItem = () => setItems([...items, { itemName: '', description: '', quantity: '1', unitPrice: '' }]);
   const removeItem = (i: number) => setItems(items.filter((_, idx) => idx !== i));
-  const updateItem = (i: number, field: keyof Item, value: any) => {
+  const updateItem = (i: number, field: keyof Item, value: string) => {
     const updated = [...items];
-    (updated[i] as any)[field] = value;
+    updated[i] = { ...updated[i], [field]: value };
     setItems(updated);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Validate before sending
+    for (const item of items) {
+      if (!item.itemName.trim()) { toast.error('Item name is required'); return; }
+      if (!item.quantity || parseInt(item.quantity) < 1) { toast.error('Quantity must be at least 1'); return; }
+      if (!item.unitPrice || parseFloat(item.unitPrice) <= 0) { toast.error('Unit price must be greater than 0'); return; }
+    }
     setLoading(true);
     try {
-      await API.post('/procurement/requisition/create', {
-        requisitionNumber: reqNumber,
+      // ✅ Convert strings → numbers only at submit time
+      const payload = {
+        requisitionNumber: reqNumber.trim() || `REQ-${Date.now()}`,
         status: 'PENDING',
-        requestedBy: { id: userId || 1 },
-        items,
-      });
-      toast.success('Requisition created');
+        requestedBy: { id: userId },
+        items: items.map(item => ({
+          itemName: item.itemName,
+          description: item.description,
+          quantity: parseInt(item.quantity) || 1,
+          unitPrice: parseFloat(item.unitPrice) || 0,
+        })),
+      };
+      await API.post('/procurement/requisition/create', payload);
+      toast.success('Requisition created successfully!');
       navigate('/requisitions');
-    } catch { toast.error('Failed to create'); }
-    finally { setLoading(false); }
+    } catch (err: any) {
+      const msg = err.response?.data || 'Failed to create requisition';
+      toast.error(typeof msg === 'string' ? msg : 'Failed to create');
+    } finally { setLoading(false); }
   };
 
   return (
@@ -48,8 +64,8 @@ const RequisitionForm = () => {
       <h1 className="page-title mb-6">New Requisition</h1>
       <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
         <div className="glass-card p-6">
-          <label className="form-label">Requisition Number</label>
-          <input value={reqNumber} onChange={e => setReqNumber(e.target.value)} className="form-input" placeholder="REQ-2024-001" required />
+          <label className="form-label">Requisition Number <span className="text-muted-foreground text-xs">(leave blank to auto-generate)</span></label>
+          <input value={reqNumber} onChange={e => setReqNumber(e.target.value)} className="form-input" placeholder="REQ-2024-001" />
         </div>
 
         <div className="glass-card p-6">
@@ -65,10 +81,44 @@ const RequisitionForm = () => {
                   {items.length > 1 && <button type="button" onClick={() => removeItem(i)} className="text-destructive hover:text-destructive/80"><X className="w-4 h-4" /></button>}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div><label className="form-label">Name</label><input value={item.itemName} onChange={e => updateItem(i, 'itemName', e.target.value)} className="form-input" required /></div>
-                  <div><label className="form-label">Description</label><input value={item.description} onChange={e => updateItem(i, 'description', e.target.value)} className="form-input" /></div>
-                  <div><label className="form-label">Quantity</label><input type="number" min={1} value={item.quantity} onChange={e => updateItem(i, 'quantity', +e.target.value)} className="form-input" required /></div>
-                  <div><label className="form-label">Unit Price</label><input type="number" min={0} step={0.01} value={item.unitPrice} onChange={e => updateItem(i, 'unitPrice', +e.target.value)} className="form-input" required /></div>
+                  <div>
+                    <label className="form-label">Name *</label>
+                    <input value={item.itemName} onChange={e => updateItem(i, 'itemName', e.target.value)} className="form-input" required placeholder="e.g. Laptop" />
+                  </div>
+                  <div>
+                    <label className="form-label">Description</label>
+                    <input value={item.description} onChange={e => updateItem(i, 'description', e.target.value)} className="form-input" placeholder="Optional details" />
+                  </div>
+                  <div>
+                    <label className="form-label">Quantity *</label>
+                    <input
+                      inputMode="numeric"
+                      value={item.quantity}
+                      onChange={e => {
+                        // Allow only digits — store as raw string so user can clear and retype
+                        const v = e.target.value.replace(/[^0-9]/g, '');
+                        updateItem(i, 'quantity', v);
+                      }}
+                      className="form-input"
+                      placeholder="e.g. 10"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Unit Price * <span className="text-muted-foreground text-xs">(₹ per item)</span></label>
+                    <input
+                      inputMode="decimal"
+                      value={item.unitPrice}
+                      onChange={e => {
+                        // Allow digits and one decimal point
+                        const v = e.target.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+                        updateItem(i, 'unitPrice', v);
+                      }}
+                      className="form-input"
+                      placeholder="e.g. 45000.00"
+                      required
+                    />
+                  </div>
                 </div>
               </motion.div>
             ))}

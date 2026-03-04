@@ -10,11 +10,15 @@ import { CheckCircle, XCircle, Clock, CalendarDays, User, ShoppingCart } from 'l
 const Approvals = () => {
   const [approvals, setApprovals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   useEffect(() => {
     API.get('/procurement/approval/all')
       .then(({ data }) => setApprovals(data || []))
-      .catch(() => toast.error('Failed to load approvals'))
+      .catch((err) => {
+        if (err.response?.status === 403) { setAccessDenied(true); }
+        else { toast.error('Failed to load approvals'); }
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -23,6 +27,18 @@ const Approvals = () => {
     approved: approvals.filter(a => (a.status || (a.approved ? 'APPROVED' : 'REJECTED')) === 'APPROVED').length,
     rejected: approvals.filter(a => (a.status || (a.approved ? 'APPROVED' : 'REJECTED')) === 'REJECTED').length,
   };
+
+  if (accessDenied) return (
+    <AnimatedPage>
+      <div className="glass-card p-14 text-center">
+        <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: 'hsla(0,84%,60%,0.1)' }}>
+          <XCircle className="w-8 h-8" style={{ color: 'hsl(0,84%,65%)' }} />
+        </div>
+        <p className="font-semibold mb-1" style={{ color: 'hsl(214,32%,80%)' }}>Access Restricted</p>
+        <p className="text-sm" style={{ color: 'hsl(215,20%,45%)' }}>Approval management is available to Procurement Managers and Admins only.</p>
+      </div>
+    </AnimatedPage>
+  );
 
   return (
     <AnimatedPage>

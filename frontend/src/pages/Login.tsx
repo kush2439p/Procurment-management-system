@@ -30,7 +30,9 @@ const Login = () => {
       toast.success('Welcome back! 🎉');
       navigate('/dashboard');
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Invalid credentials. Try Demo mode.');
+      // ✅ Show exact backend message — handles pending/rejected/suspended states clearly
+      const msg = err.response?.data || err.message || 'Login failed. Please try again.';
+      toast.error(typeof msg === 'string' ? msg : 'Login failed');
     } finally {
       setLoading(false);
     }
@@ -211,6 +213,16 @@ const Login = () => {
             Don't have an account?{' '}
             <Link to="/register" className="font-semibold transition-colors hover:opacity-80" style={{ color: 'hsl(252,87%,75%)' }}>Create one</Link>
           </motion.p>
+
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }} className="mt-3 text-center">
+            <Link
+              to="/vendor-login"
+              className="inline-flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-xl transition-all"
+              style={{ color: 'hsl(160,84%,55%)', border: '1px solid hsla(160,84%,39%,0.3)', background: 'hsla(160,84%,39%,0.07)' }}
+            >
+              🏢 Login as Vendor
+            </Link>
+          </motion.div>
         </motion.div>
       </div>
     </div>

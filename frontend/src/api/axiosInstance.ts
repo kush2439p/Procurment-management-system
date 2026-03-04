@@ -12,7 +12,11 @@ API.interceptors.request.use(cfg => {
 API.interceptors.response.use(
   r => r,
   err => {
-    if (err.response?.status === 401) {
+    const url = err.config?.url || '';
+    const isAuthEndpoint = url.includes('/api/auth/') || url.includes('/api/vendor-auth/');
+    // ✅ Only redirect to login on 401 for protected endpoints — NOT for the login endpoint itself
+    // (wrong password returns 401, and without this check it causes a full page reload)
+    if (err.response?.status === 401 && !isAuthEndpoint) {
       localStorage.removeItem('procurementToken');
       localStorage.removeItem('procurementRoles');
       localStorage.removeItem('procurementUser');

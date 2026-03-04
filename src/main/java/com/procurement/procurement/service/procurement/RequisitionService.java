@@ -22,15 +22,15 @@ public class RequisitionService {
     private final AuditService auditService;
 
     public RequisitionService(RequisitionRepository requisitionRepository,
-                              UserRepository userRepository,
-                              AuditService auditService) {
+            UserRepository userRepository,
+            AuditService auditService) {
         this.requisitionRepository = requisitionRepository;
         this.userRepository = userRepository;
         this.auditService = auditService;
     }
 
     // ===================== CREATE =====================
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_PROCUREMENT_MANAGER', 'CREATE_REQUISITION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_PROCUREMENT_MANAGER', 'ROLE_EMPLOYEE', 'CREATE_REQUISITION')")
     public Requisition createRequisition(Requisition requisition) {
 
         String username = SecurityContextHolder.getContext()
@@ -96,9 +96,56 @@ public class RequisitionService {
         return requisitionRepository.findByRequestedBy(currentUser);
     }
 
+    // ===================== DELETE =====================
+    @PreAuthorize("hasAnyAuthority('ROLE_EMPLOYEE', 'ROLE_ADMIN', 'ROLE_PROCUREMENT_MANAGER')")
+    public void deleteRequisition(Long id) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        boolean isPrivileged = SecurityContextHolder.getContext().getAuthentication()
+                .getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_PROCUREMENT_MANAGER")
+                        || a.getAuthority().equals("ROLE_ADMIN"));
+
+        Requisition req = requisitionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Requisition not found"));
+
+        // Employees can only delete their own PENDING requisitions
+        if (!isPrivileged) {
+            if (!req.getRequestedBy().getUsername().equals(username)) {
+                throw new RuntimeException("You can only delete your own requisitions.");
+            }
+            if (!"PENDING".equals(req.getStatus())) {
+                throw new RuntimeException("Only PENDING requisitions can be deleted.");
+            }
+        }
+
+        requisitionRepository.deleteById(id);
+        auditService.log("Requisition", id, "DELETE", "Requisition deleted by " + username);
+    }
+
     // ===================== GET BY STATUS =====================
     @PreAuthorize("hasAuthority('VIEW_REQUISITION')")
     public List<Requisition> getRequisitionsByStatus(String status) {
         return requisitionRepository.findByStatus(status);
+    }
+
+    // ===================== GET BY ID (all roles, employees see own only)
+    // =====================
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_PROCUREMENT_MANAGER', 'ROLE_EMPLOYEE')")
+    public Requisition getRequisitionById(Long id) {
+        Requisition req = requisitionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Requisition not found with id: " + id));
+
+        boolean isPrivileged = SecurityContextHolder.getContext().getAuthentication()
+                .getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_PROCUREMENT_MANAGER")
+                        || a.getAuthority().equals("ROLE_ADMIN"));
+
+        if (!isPrivileged) {
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            if (!req.getRequestedBy().getUsername().equals(username)) {
+                throw new RuntimeException("Access denied: this requisition does not belong to you.");
+            }
+        }
+        return req;
     }
 }

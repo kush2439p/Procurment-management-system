@@ -3,6 +3,7 @@ package com.procurement.procurement.controller.vendor;
 import com.procurement.procurement.entity.vendor.Vendor;
 import com.procurement.procurement.repository.vendor.VendorRepository;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/vendor")
+@PreAuthorize("hasAnyAuthority('ROLE_PROCUREMENT_MANAGER', 'ROLE_ADMIN')")
 public class VendorController {
 
     private final VendorRepository vendorRepository;
@@ -21,7 +23,7 @@ public class VendorController {
     // ===================== Create Vendor =====================
     @PostMapping("/create")
     public ResponseEntity<Vendor> createVendor(@RequestBody Vendor vendor) {
-        vendor.setStatus("ACTIVE");
+        vendor.setStatus("APPROVED");
         return ResponseEntity.ok(vendorRepository.save(vendor));
     }
 

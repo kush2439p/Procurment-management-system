@@ -7,6 +7,7 @@ import com.procurement.procurement.repository.procurement.ApprovalRepository;
 import com.procurement.procurement.repository.procurement.PurchaseOrderRepository;
 import com.procurement.procurement.repository.user.UserRepository;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -15,6 +16,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/procurement/approval")
+@PreAuthorize("hasAnyAuthority('ROLE_PROCUREMENT_MANAGER', 'ROLE_ADMIN')")
 public class ApprovalController {
 
     private final ApprovalRepository approvalRepository;
@@ -22,8 +24,8 @@ public class ApprovalController {
     private final UserRepository userRepository;
 
     public ApprovalController(ApprovalRepository approvalRepository,
-                              PurchaseOrderRepository purchaseOrderRepository,
-                              UserRepository userRepository) {
+            PurchaseOrderRepository purchaseOrderRepository,
+            UserRepository userRepository) {
         this.approvalRepository = approvalRepository;
         this.purchaseOrderRepository = purchaseOrderRepository;
         this.userRepository = userRepository;
@@ -38,7 +40,7 @@ public class ApprovalController {
     // ===================== Approve a Purchase Order =====================
     @PostMapping("/approve/{poId}")
     public ResponseEntity<String> approvePurchaseOrder(@PathVariable Long poId,
-                                                       @RequestParam Long approverId) {
+            @RequestParam Long approverId) {
         Optional<PurchaseOrder> poOpt = purchaseOrderRepository.findById(poId);
         if (poOpt.isEmpty()) {
             return ResponseEntity.badRequest().body("Purchase Order not found");
@@ -72,8 +74,8 @@ public class ApprovalController {
     // ===================== Reject a Purchase Order =====================
     @PostMapping("/reject/{poId}")
     public ResponseEntity<String> rejectPurchaseOrder(@PathVariable Long poId,
-                                                      @RequestParam Long approverId,
-                                                      @RequestParam String reason) {
+            @RequestParam Long approverId,
+            @RequestParam String reason) {
         Optional<PurchaseOrder> poOpt = purchaseOrderRepository.findById(poId);
         if (poOpt.isEmpty()) {
             return ResponseEntity.badRequest().body("Purchase Order not found");

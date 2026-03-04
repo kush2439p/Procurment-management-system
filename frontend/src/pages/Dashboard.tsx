@@ -44,44 +44,52 @@ const Dashboard = () => {
   const [recentReqs, setRecentReqs] = useState<any[]>([]);
   const [poStatusData, setPoStatusData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const { username } = useAuth();
+  const { username, roles } = useAuth();
   const navigate = useNavigate();
+  const isManagerOrAdmin = roles.includes('ROLE_PROCUREMENT_MANAGER') || roles.includes('ROLE_ADMIN');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [vendors, reqs, pos, approvals] = await Promise.all([
-          API.get('/vendor/all'),
-          API.get('/procurement/requisition/all'),
-          API.get('/procurement/purchase-order/all'),
-          API.get('/procurement/approval/all'),
-        ]);
-        setStats({
-          vendors: vendors.data?.length || 0,
-          requisitions: reqs.data?.length || 0,
-          pos: pos.data?.length || 0,
-          approvals: approvals.data?.length || 0,
-        });
-        const poList = pos.data || [];
-        setRecentPOs(poList.slice(-5).reverse());
-        const reqList = reqs.data || [];
-        setRecentReqs(reqList.slice(-5).reverse());
-        const statusCounts = poList.reduce((acc: any, po: any) => {
-          acc[po.status] = (acc[po.status] || 0) + 1;
-          return acc;
-        }, {});
-        setPoStatusData(Object.entries(statusCounts).map(([name, value]) => ({ name, value })));
-      } catch { /* API not available */ }
+        if (isManagerOrAdmin) {
+          // Managers/Admins see everything
+          const [vendors, reqs, pos, approvals] = await Promise.allSettled([
+            API.get('/vendor/all'),
+            API.get('/procurement/requisition/all'),
+            API.get('/procurement/purchase-order/all'),
+            API.get('/procurement/approval/all'),
+          ]);
+          const vData = vendors.status === 'fulfilled' ? vendors.value.data : [];
+          const rData = reqs.status === 'fulfilled' ? reqs.value.data : [];
+          const pData = pos.status === 'fulfilled' ? pos.value.data : [];
+          const aData = approvals.status === 'fulfilled' ? approvals.value.data : [];
+          setStats({ vendors: vData?.length || 0, requisitions: rData?.length || 0, pos: pData?.length || 0, approvals: aData?.length || 0 });
+          const poList = pData || [];
+          setRecentPOs(poList.slice(-5).reverse());
+          const reqList = rData || [];
+          setRecentReqs(reqList.slice(-5).reverse());
+          const statusCounts = poList.reduce((acc: any, po: any) => { acc[po.status] = (acc[po.status] || 0) + 1; return acc; }, {});
+          setPoStatusData(Object.entries(statusCounts).map(([name, value]) => ({ name, value })));
+        } else {
+          // Employees: only their own requisitions
+          const reqs = await API.get('/procurement/requisition/my').catch(() => ({ data: [] }));
+          const reqList = reqs.data || [];
+          setStats({ vendors: 0, requisitions: reqList.length, pos: 0, approvals: 0 });
+          setRecentReqs(reqList.slice(-5).reverse());
+        }
+      } catch { /* silent */ }
       finally { setLoading(false); }
     };
     fetchData();
-  }, []);
+  }, [isManagerOrAdmin]);
 
-  const statCards = [
+  const statCards = isManagerOrAdmin ? [
     { title: 'Total Vendors', value: stats.vendors, icon: Building2, gradient: 'linear-gradient(135deg, hsl(252,87%,55%) 0%, hsl(265,80%,48%) 100%)', glow: 'hsla(252,87%,60%,0.3)', delay: 0.1 },
     { title: 'Requisitions', value: stats.requisitions, icon: FileText, gradient: 'linear-gradient(135deg, hsl(38,92%,48%) 0%, hsl(25,85%,42%) 100%)', glow: 'hsla(38,92%,50%,0.25)', delay: 0.15 },
     { title: 'Purchase Orders', value: stats.pos, icon: ShoppingCart, gradient: 'linear-gradient(135deg, hsl(160,84%,36%) 0%, hsl(173,80%,30%) 100%)', glow: 'hsla(160,84%,39%,0.25)', delay: 0.2 },
     { title: 'Approvals', value: stats.approvals, icon: CheckCircle, gradient: 'linear-gradient(135deg, hsl(339,85%,52%) 0%, hsl(355,80%,46%) 100%)', glow: 'hsla(339,85%,52%,0.25)', delay: 0.25 },
+  ] : [
+    { title: 'My Requisitions', value: stats.requisitions, icon: FileText, gradient: 'linear-gradient(135deg, hsl(38,92%,48%) 0%, hsl(25,85%,42%) 100%)', glow: 'hsla(38,92%,50%,0.25)', delay: 0.15 },
   ];
 
   return (

@@ -32,6 +32,20 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    // ===================== Generate Vendor JWT Token =====================
+    public String generateVendorToken(String email, Long vendorId) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
+
+        return Jwts.builder()
+                .setSubject(email)
+                .claim("vendorId", vendorId)
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(jwtKey)
+                .compact();
+    }
+
     // ===================== Get Username from JWT =====================
     public String getUsernameFromToken(String token) {
         return Jwts.parserBuilder()
@@ -40,6 +54,16 @@ public class JwtTokenProvider {
                 .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
+    }
+
+    // ===================== Get VendorId from JWT =====================
+    public Long getVendorIdFromToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(jwtKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.get("vendorId", Long.class);
     }
 
     // ===================== Validate JWT =====================

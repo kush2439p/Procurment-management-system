@@ -4,23 +4,29 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import {
   LayoutDashboard, Building2, FileText, ShoppingCart, CheckCircle,
-  BarChart3, ChevronLeft, ChevronRight, LogOut, Menu, X, User, Zap
+  BarChart3, ChevronLeft, ChevronRight, LogOut, Menu, X, User, Zap, Shield
 } from 'lucide-react';
 
 const navItems = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', color: 'from-violet-500 to-purple-600' },
-  { to: '/vendors', icon: Building2, label: 'Vendors', color: 'from-blue-500 to-cyan-500' },
-  { to: '/requisitions', icon: FileText, label: 'Requisitions', color: 'from-amber-500 to-orange-500' },
-  { to: '/purchase-orders', icon: ShoppingCart, label: 'Purchase Orders', color: 'from-emerald-500 to-teal-500' },
-  { to: '/approvals', icon: CheckCircle, label: 'Approvals', color: 'from-rose-500 to-pink-500' },
-  { to: '/reports', icon: BarChart3, label: 'Reports', color: 'from-indigo-500 to-violet-500' },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', color: 'from-violet-500 to-purple-600', roles: ['ROLE_EMPLOYEE', 'ROLE_PROCUREMENT_MANAGER', 'ROLE_ADMIN'] },
+  { to: '/vendors', icon: Building2, label: 'Vendors', color: 'from-blue-500 to-cyan-500', roles: ['ROLE_PROCUREMENT_MANAGER', 'ROLE_ADMIN'] },
+  { to: '/requisitions', icon: FileText, label: 'Requisitions', color: 'from-amber-500 to-orange-500', roles: ['ROLE_EMPLOYEE', 'ROLE_PROCUREMENT_MANAGER', 'ROLE_ADMIN'] },
+  { to: '/purchase-orders', icon: ShoppingCart, label: 'Purchase Orders', color: 'from-emerald-500 to-teal-500', roles: ['ROLE_PROCUREMENT_MANAGER', 'ROLE_ADMIN'] },
+  { to: '/approvals', icon: CheckCircle, label: 'Approvals', color: 'from-rose-500 to-pink-500', roles: ['ROLE_PROCUREMENT_MANAGER', 'ROLE_ADMIN'] },
+  { to: '/reports', icon: BarChart3, label: 'Reports', color: 'from-indigo-500 to-violet-500', roles: ['ROLE_PROCUREMENT_MANAGER', 'ROLE_ADMIN'] },
 ];
 
 export const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { logout, username } = useAuth();
+  const auth = useAuth();
+  const { logout, username, roles: userRoles } = auth;
   const navigate = useNavigate();
+
+  // Filter nav items by current user's roles
+  const visibleNavItems = navItems.filter(item =>
+    item.roles.some(r => (userRoles || []).includes(r))
+  );
 
   const handleLogout = () => {
     logout();
@@ -58,7 +64,7 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navItems.map(({ to, icon: Icon, label, color }) => (
+        {visibleNavItems.map(({ to, icon: Icon, label, color }) => (
           <NavLink
             key={to}
             to={to}
@@ -87,6 +93,36 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
             )}
           </NavLink>
         ))}
+
+        {/* Admin Link */}
+        {useAuth().isAdmin() && (
+          <NavLink
+            to="/admin"
+            onClick={() => setMobileOpen(false)}
+            className={({ isActive }) => isActive ? 'sidebar-link-active' : 'sidebar-link'}
+          >
+            {({ isActive }) => (
+              <>
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all duration-200 ${isActive ? 'bg-gradient-to-br from-indigo-600 to-indigo-800' : 'bg-white/5'}`}
+                  style={isActive ? { boxShadow: '0 4px 12px rgba(0,0,0,0.3)' } : {}}>
+                  <Shield className={`w-4 h-4 ${isActive ? 'text-white' : 'text-current'}`} />
+                </div>
+                <AnimatePresence>
+                  {!collapsed && (
+                    <motion.span
+                      initial={{ opacity: 0, width: 0 }}
+                      animate={{ opacity: 1, width: 'auto' }}
+                      exit={{ opacity: 0, width: 0 }}
+                      className="whitespace-nowrap overflow-hidden"
+                    >
+                      Admin Panel
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </>
+            )}
+          </NavLink>
+        )}
       </nav>
 
       {/* User */}
