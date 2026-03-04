@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import {
   LayoutDashboard, Building2, FileText, ShoppingCart, CheckCircle,
-  BarChart3, ChevronLeft, ChevronRight, LogOut, Menu, X, User, Zap, Shield
+  BarChart3, ChevronLeft, ChevronRight, LogOut, Menu, X, User, Shield
 } from 'lucide-react';
 
 const navItems = [
@@ -38,12 +38,12 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
       {/* Brand */}
       <div className="flex items-center gap-3 px-4 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
         <motion.div
-          whileHover={{ rotate: 15, scale: 1.1 }}
+          whileHover={{ rotate: 10, scale: 1.1 }}
           transition={{ type: 'spring', stiffness: 300 }}
           className="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center"
           style={{ background: 'linear-gradient(135deg, hsl(252,87%,67%) 0%, hsl(265,85%,60%) 100%)', boxShadow: '0 4px 15px hsla(252,87%,67%,0.4)' }}
         >
-          <Zap className="w-5 h-5 text-white" />
+          <ShoppingCart className="w-5 h-5 text-white" />
         </motion.div>
         <AnimatePresence>
           {!collapsed && (
@@ -54,9 +54,9 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
               className="overflow-hidden"
             >
               <span className="text-sm font-bold whitespace-nowrap" style={{ background: 'linear-gradient(135deg, #fff 0%, hsl(252,87%,80%) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                ProcureFlow
+                Procurement Manager
               </span>
-              <p className="text-[10px] whitespace-nowrap" style={{ color: 'hsl(215,20%,45%)' }}>Smart Procurement</p>
+              <p className="text-[10px] whitespace-nowrap" style={{ color: 'hsl(215,20%,45%)' }}>Vendor Management System</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -213,7 +213,7 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
               }
             </AnimatePresence>
           </motion.button>
-          <span className="font-bold text-sm" style={{ background: 'linear-gradient(135deg, #fff, hsl(252,87%,80%))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>ProcureFlow</span>
+          <span className="font-bold text-sm" style={{ background: 'linear-gradient(135deg, #fff, hsl(252,87%,80%))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Procurement</span>
         </div>
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           {children}

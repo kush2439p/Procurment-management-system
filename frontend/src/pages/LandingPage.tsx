@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import {
   ShoppingCart, Shield, BarChart3, Zap, CheckCircle, ArrowRight, Building2,
   FileText, Users, Star, Lock, TrendingUp, Globe, Clock, Eye,
-  ChevronRight, Play, Layers, Award, Target
+  ChevronRight, Play, Layers, Target
 } from 'lucide-react';
 import { useRef } from 'react';
 import { toast } from 'sonner';
@@ -44,10 +44,10 @@ const LandingPage = () => {
   ];
 
   const roles = [
-    { role: 'Admin', icon: Star, permissions: ['Full system access', 'Manage all users & vendors', 'Create & approve everything', 'Generate all reports'], color: 'primary' },
-    { role: 'Manager', icon: Award, permissions: ['Approve/Reject requisitions', 'Approve/Reject purchase orders', 'View audit trails', 'Download reports'], color: 'success' },
-    { role: 'Procurement Manager', icon: Target, permissions: ['Create & manage vendors', 'Create purchase orders', 'Track requisitions', 'Generate reports'], color: 'warning' },
-    { role: 'Employee', icon: Users, permissions: ['Create requisitions', 'Track own requests', 'View vendor list', 'Basic dashboard access'], color: 'destructive' },
+    { role: 'Admin', icon: Star, permissions: ['Full system access', 'Manage all users & vendors', 'Approve vendors & orders', 'Generate all reports'], color: 'primary' },
+    { role: 'Procurement Manager', icon: Target, permissions: ['Approve/Reject requisitions', 'Approve/Reject purchase orders', 'View audit trails', 'Download reports'], color: 'warning' },
+    { role: 'Employee', icon: Users, permissions: ['Create requisitions', 'Track own requests', 'Confirm goods received', 'Download GRN receipts'], color: 'destructive' },
+    { role: 'Vendor', icon: Building2, permissions: ['Self-register & apply', 'Login after admin approval', 'View assigned purchase orders', 'Manage vendor profile'], color: 'success' },
   ];
 
   const specs = [
@@ -93,7 +93,7 @@ const LandingPage = () => {
             <motion.div whileHover={{ rotate: 10, scale: 1.1 }} className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/25">
               <ShoppingCart className="w-5 h-5 text-primary-foreground" />
             </motion.div>
-            <span className="text-lg font-bold text-foreground tracking-tight">ProcureFlow</span>
+            <span className="text-lg font-bold text-foreground tracking-tight">Smart Procurement</span>
           </div>
           <div className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">Features</a>
@@ -285,19 +285,20 @@ const LandingPage = () => {
                 <tr>
                   <th>Feature</th>
                   <th className="text-center">Admin</th>
-                  <th className="text-center">Manager</th>
                   <th className="text-center">Proc. Mgr</th>
                   <th className="text-center">Employee</th>
+                  <th className="text-center">Vendor</th>
                 </tr>
               </thead>
               <tbody>
                 {[
-                  ['Create/Edit/Delete Vendor', true, false, true, false],
-                  ['Create Requisition', true, true, true, true],
+                  ['Create/Edit/Delete Vendor', true, false, false, false],
+                  ['Approve/Reject Vendor', true, true, false, false],
+                  ['Create Requisition', true, true, true, false],
                   ['Approve/Reject Requisition', true, true, false, false],
-                  ['Create Purchase Order', true, false, true, false],
+                  ['Create Purchase Order', true, true, false, false],
                   ['Approve/Reject PO', true, true, false, false],
-                  ['Download Reports', true, true, true, false],
+                  ['Download Reports', true, true, false, false],
                   ['View Audit Trail', true, true, true, false],
                   ['Dashboard Analytics', true, true, true, true],
                 ].map(([feature, ...perms], i) => (
@@ -454,7 +455,7 @@ const LandingPage = () => {
             <ShoppingCart className="w-5 h-5 text-primary" />
             <span className="font-semibold text-foreground">ProcureFlow</span>
           </div>
-          <p className="text-sm text-muted-foreground">© 2024 ProcureFlow — Smart Procurement & Vendor Management System</p>
+          <p className="text-sm text-muted-foreground">© 2024 Smart Procurement — Vendor Management System</p>
         </div>
       </footer>
     </div>

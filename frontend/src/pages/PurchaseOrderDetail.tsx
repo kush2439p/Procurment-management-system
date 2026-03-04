@@ -11,13 +11,11 @@ import { ArrowLeft, FileText, Download, Truck, CheckCircle, Clock } from 'lucide
 const PurchaseOrderDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAdmin, isManager, userId } = useAuth();
-  const canApprove = isAdmin() || isManager();
+  const { isAdmin, isProcMgr } = useAuth();
+  const canViewOnly = isAdmin() || isProcMgr();
   const [po, setPo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [docs, setDocs] = useState<any[]>([]);
-  const [rejectReason, setRejectReason] = useState('');
-  const [showReject, setShowReject] = useState(false);
 
   useEffect(() => {
     API.get(`/procurement/purchase-order/${id}`)
@@ -29,23 +27,6 @@ const PurchaseOrderDetail = () => {
       .catch(() => { }); // Documents may not exist yet
   }, [id]);
 
-  const approve = async () => {
-    try {
-      await API.post(`/procurement/approval/approve/${id}?approverId=${userId || 1}`);
-      toast.success('Purchase order approved! Vendor has been notified.');
-      setPo({ ...po, status: 'APPROVED' });
-    } catch { toast.error('Failed to approve'); }
-  };
-
-  const reject = async () => {
-    if (!rejectReason.trim()) { toast.error('Please enter a rejection reason'); return; }
-    try {
-      await API.post(`/procurement/approval/reject/${id}?approverId=${userId || 1}&reason=${encodeURIComponent(rejectReason)}`);
-      toast.success('Purchase order rejected');
-      setPo({ ...po, status: 'REJECTED' });
-      setShowReject(false);
-    } catch { toast.error('Failed to reject'); }
-  };
 
   if (loading) return <div className="flex items-center justify-center h-64 text-muted-foreground">Loading...</div>;
   if (!po) return <div className="text-center text-muted-foreground p-12">Purchase order not found</div>;
@@ -147,25 +128,21 @@ const PurchaseOrderDetail = () => {
           )}
         </div>
 
-        {/* Approve / Reject */}
-        {canApprove && po.status === 'PENDING' && (
-          <div className="space-y-3">
-            <div className="glass-card p-4" style={{ border: '1px solid hsla(38,92%,50%,0.2)', background: 'hsla(38,92%,50%,0.04)' }}>
-              <p className="text-sm mb-3" style={{ color: 'hsl(38,92%,65%)' }}>
-                ⚠ This PO is <strong>PENDING</strong>. Once you approve it, the vendor will receive a notification and will be able to mark it as Shipped.
-              </p>
-              <div className="flex gap-3">
-                <motion.button whileTap={{ scale: 0.97 }} onClick={approve} className="btn-success flex-1">✓ Approve PO</motion.button>
-                <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowReject(!showReject)} className="btn-danger flex-1">✗ Reject</motion.button>
+        {/* Vendor Approval Info */}
+        {po.status === 'PENDING' && (canViewOnly) && (
+          <div className="glass-card p-5" style={{ border: '1px solid hsla(252,87%,67%,0.2)', background: 'hsla(252,87%,67%,0.04)' }}>
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">📋</span>
+              <div>
+                <p className="font-semibold text-sm mb-1" style={{ color: 'hsl(252,87%,75%)' }}>Awaiting Vendor Decision</p>
+                <p className="text-xs leading-relaxed" style={{ color: 'hsl(215,20%,55%)' }}>
+                  This PO is <strong style={{ color: 'hsl(38,92%,60%)' }}>PENDING</strong> vendor review.
+                  Since the vendor is the supplier, they decide whether they can fulfill this order based on their stock.
+                  The vendor will <strong>Accept</strong> or <strong>Reject</strong> it from their Vendor Portal.
+                  Once accepted, the vendor will mark it as Shipped and then Delivered.
+                </p>
               </div>
             </div>
-            {showReject && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="glass-card p-4 space-y-3">
-                <label className="form-label">Rejection Reason *</label>
-                <textarea value={rejectReason} onChange={e => setRejectReason(e.target.value)} className="form-input min-h-[80px]" placeholder="Enter reason for rejection..." required />
-                <button onClick={reject} className="btn-danger w-full">Confirm Rejection</button>
-              </motion.div>
-            )}
           </div>
         )}
       </div>

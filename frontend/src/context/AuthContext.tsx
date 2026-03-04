@@ -127,7 +127,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // ✅ Role checks — clean and consistent
   const isAdmin = useCallback(() => auth.roles.includes('ROLE_ADMIN'), [auth.roles]);
-  const isManager = useCallback(() => auth.roles.includes('ROLE_MANAGER') || isAdmin(), [auth.roles]);
+  const isManager = useCallback(() => auth.roles.includes('ROLE_PROCUREMENT_MANAGER') || isAdmin(), [auth.roles]);
   const isProcMgr = useCallback(() => auth.roles.includes('ROLE_PROCUREMENT_MANAGER') || isAdmin(), [auth.roles]);
   const isVendor = useCallback(() => auth.roles.includes('ROLE_VENDOR'), [auth.roles]);
   const isEmployee = useCallback(() => auth.roles.includes('ROLE_EMPLOYEE') && !isAdmin() && !isProcMgr(), [auth.roles]);

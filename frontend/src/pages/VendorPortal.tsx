@@ -39,6 +39,27 @@ const VendorPortal = () => {
 
     useEffect(() => { fetchPOs(); }, []);
 
+    const handleAccept = async (id: number) => {
+        try {
+            await API.put(`/api/vendor-portal/purchase-orders/${id}/accept`);
+            toast.success('✅ Order accepted! You can now mark it as Shipped.');
+            fetchPOs();
+        } catch (error: any) {
+            toast.error(error.response?.data || 'Failed to accept order');
+        }
+    };
+
+    const handleReject = async (id: number) => {
+        if (!confirm('Reject this purchase order? This cannot be undone.')) return;
+        try {
+            await API.put(`/api/vendor-portal/purchase-orders/${id}/reject`);
+            toast.success('Order rejected.');
+            fetchPOs();
+        } catch (error: any) {
+            toast.error(error.response?.data || 'Failed to reject order');
+        }
+    };
+
     const handleStatusUpdate = async (id: number, status: string) => {
         try {
             await API.put(`/api/vendor-portal/purchase-orders/${id}/status`, { status });
@@ -134,14 +155,18 @@ const VendorPortal = () => {
                     {/* Role Info Card */}
                     <div className="glass-card p-5 border" style={{ borderColor: 'hsla(173,80%,40%,0.2)', background: 'hsla(173,80%,40%,0.04)' }}>
                         <h3 className="text-sm font-semibold mb-3" style={{ color: 'hsl(173,80%,65%)' }}>📋 Your Role as a Vendor</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs" style={{ color: 'hsl(215,20%,55%)' }}>
+                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs" style={{ color: 'hsl(215,20%,55%)' }}>
                             <div className="flex items-start gap-2">
                                 <span className="text-base">📦</span>
                                 <div><strong className="block mb-0.5" style={{ color: 'hsl(214,32%,75%)' }}>View Orders</strong>See all purchase orders assigned to you by the procurement team.</div>
                             </div>
                             <div className="flex items-start gap-2">
+                                <span className="text-base">✅</span>
+                                <div><strong className="block mb-0.5" style={{ color: 'hsl(214,32%,75%)' }}>Accept or Reject</strong>Review PENDING orders and decide if you can fulfill them based on stock availability.</div>
+                            </div>
+                            <div className="flex items-start gap-2">
                                 <span className="text-base">🚚</span>
-                                <div><strong className="block mb-0.5" style={{ color: 'hsl(214,32%,75%)' }}>Update Delivery Status</strong>Mark orders as Shipped or Delivered to keep the team informed.</div>
+                                <div><strong className="block mb-0.5" style={{ color: 'hsl(214,32%,75%)' }}>Update Delivery Status</strong>Mark accepted orders as Shipped or Delivered to keep the team informed.</div>
                             </div>
                             <div className="flex items-start gap-2">
                                 <span className="text-base">📄</span>
@@ -180,6 +205,20 @@ const VendorPortal = () => {
                                             </p>
                                         </div>
                                         <div className="flex gap-2">
+                                            {po.status === 'PENDING' && (
+                                                <>
+                                                    <button onClick={() => handleAccept(po.id)}
+                                                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all"
+                                                        style={{ background: 'linear-gradient(135deg, hsl(160,84%,36%), hsl(160,70%,30%))' }}>
+                                                        <CheckCircle className="w-4 h-4" /> Accept Order
+                                                    </button>
+                                                    <button onClick={() => handleReject(po.id)}
+                                                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all"
+                                                        style={{ background: 'linear-gradient(135deg, hsl(0,84%,50%), hsl(0,70%,42%))' }}>
+                                                        <span className="text-base leading-none">✕</span> Reject Order
+                                                    </button>
+                                                </>
+                                            )}
                                             {po.status === 'APPROVED' && (
                                                 <button onClick={() => handleStatusUpdate(po.id, 'SHIPPED')}
                                                     className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all"

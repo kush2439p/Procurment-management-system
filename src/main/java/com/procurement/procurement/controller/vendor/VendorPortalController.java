@@ -71,7 +71,57 @@ public class VendorPortalController {
         return ResponseEntity.ok(pos);
     }
 
-    // ===================== Update PO Status =====================
+    // ===================== Vendor Accept / Reject PO =====================
+    @PutMapping("/purchase-orders/{id}/accept")
+    public ResponseEntity<?> acceptPurchaseOrder(@PathVariable Long id) {
+        VendorAccount account = getAuthenticatedVendorAccount();
+        if (account == null || account.getVendor() == null) {
+            return ResponseEntity.status(403).body("Vendor profile not linked.");
+        }
+
+        Optional<PurchaseOrder> poOpt = purchaseOrderRepository.findById(id);
+        if (poOpt.isEmpty() || !poOpt.get().getVendor().getId().equals(account.getVendor().getId())) {
+            return ResponseEntity.status(404).body("Purchase order not found or doesn't belong to you.");
+        }
+
+        PurchaseOrder po = poOpt.get();
+        if (!"PENDING".equals(po.getStatus())) {
+            return ResponseEntity.badRequest().body("Only PENDING purchase orders can be accepted.");
+        }
+
+        po.setStatus("APPROVED");
+        purchaseOrderRepository.save(po);
+
+        emailService.sendPODeliveredToAdmins("Vendor accepted PO: " + po.getPoNumber());
+
+        return ResponseEntity.ok("Purchase order accepted. Status set to APPROVED.");
+    }
+
+    @PutMapping("/purchase-orders/{id}/reject")
+    public ResponseEntity<?> rejectPurchaseOrder(@PathVariable Long id,
+            @RequestBody(required = false) Map<String, String> body) {
+        VendorAccount account = getAuthenticatedVendorAccount();
+        if (account == null || account.getVendor() == null) {
+            return ResponseEntity.status(403).body("Vendor profile not linked.");
+        }
+
+        Optional<PurchaseOrder> poOpt = purchaseOrderRepository.findById(id);
+        if (poOpt.isEmpty() || !poOpt.get().getVendor().getId().equals(account.getVendor().getId())) {
+            return ResponseEntity.status(404).body("Purchase order not found or doesn't belong to you.");
+        }
+
+        PurchaseOrder po = poOpt.get();
+        if (!"PENDING".equals(po.getStatus())) {
+            return ResponseEntity.badRequest().body("Only PENDING purchase orders can be rejected.");
+        }
+
+        po.setStatus("REJECTED");
+        purchaseOrderRepository.save(po);
+
+        return ResponseEntity.ok("Purchase order rejected.");
+    }
+
+    // ===================== Update PO Status (Ship / Deliver) =====================
     @PutMapping("/purchase-orders/{id}/status")
     public ResponseEntity<?> updatePurchaseOrderStatus(@PathVariable Long id,
             @RequestBody Map<String, String> request) {
@@ -87,7 +137,12 @@ public class VendorPortalController {
 
         String newStatus = request.get("status");
         if (!newStatus.equals("SHIPPED") && !newStatus.equals("DELIVERED")) {
-            return ResponseEntity.badRequest().body("Vendors can only mark POs as SHIPPED or DELIVERED.");
+            return ResponseEntity.badRequest().body(
+                    "Use /accept or /reject endpoints. SHIPPED and DELIVERED are the only valid status updates here.");
+        }
+
+        if ("SHIPPED".equals(newStatus) && !"APPROVED".equals(poOpt.get().getStatus())) {
+            return ResponseEntity.badRequest().body("PO must be APPROVED before marking as SHIPPED.");
         }
 
         PurchaseOrder po = poOpt.get();

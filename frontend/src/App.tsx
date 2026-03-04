@@ -10,7 +10,6 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Vendors from "./pages/Vendors";
-import VendorForm from "./pages/VendorForm";
 import Requisitions from "./pages/Requisitions";
 import RequisitionForm from "./pages/RequisitionForm";
 import RequisitionDetail from "./pages/RequisitionDetail";
@@ -47,8 +46,6 @@ const AppRoutes = () => (
       <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/vendors" element={<ProtectedRoute><Vendors /></ProtectedRoute>} />
-      <Route path="/vendors/new" element={<ProtectedRoute><VendorForm /></ProtectedRoute>} />
-      <Route path="/vendors/:id/edit" element={<ProtectedRoute><VendorForm /></ProtectedRoute>} />
       <Route path="/requisitions" element={<ProtectedRoute><Requisitions /></ProtectedRoute>} />
       <Route path="/requisitions/new" element={<ProtectedRoute><RequisitionForm /></ProtectedRoute>} />
       <Route path="/requisitions/:id" element={<ProtectedRoute><RequisitionDetail /></ProtectedRoute>} />

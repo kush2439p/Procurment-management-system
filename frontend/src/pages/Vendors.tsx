@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { AnimatedPage, staggerContainer, staggerItem } from '@/components/AnimatedPage';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -7,15 +6,13 @@ import { TableSkeleton } from '@/components/LoadingSkeleton';
 import { useAuth } from '@/context/AuthContext';
 import API from '@/api/axiosInstance';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Building2, Mail, Phone, MapPin } from 'lucide-react';
+import { Trash2, Building2, Mail, Phone, MapPin } from 'lucide-react';
 
 const Vendors = () => {
   const [vendors, setVendors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const { isAdmin, isProcMgr } = useAuth();
-  const canManage = isAdmin() || isProcMgr();
-  const navigate = useNavigate();
+  const { isAdmin } = useAuth();
 
   const fetchVendors = async () => {
     try {
@@ -31,7 +28,8 @@ const Vendors = () => {
   useEffect(() => { fetchVendors(); }, []);
 
   const deleteVendor = async (id: number) => {
-    if (!confirm('Delete this vendor?')) return;
+    if (!isAdmin()) return;
+    if (!confirm('Delete this vendor? This cannot be undone.')) return;
     try {
       await API.delete(`/vendor/delete/${id}`);
       toast.success('Vendor deleted');
@@ -51,18 +49,8 @@ const Vendors = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <div>
           <h1 className="page-title">Vendors</h1>
-          <p className="page-subtitle">Manage your vendor relationships</p>
+          <p className="page-subtitle">View registered vendor relationships</p>
         </div>
-        {canManage && (
-          <motion.button
-            whileHover={{ scale: 1.03, y: -1 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => navigate('/vendors/new')}
-            className="btn-primary flex items-center gap-2 shrink-0"
-          >
-            <Plus className="w-4 h-4" /> Add Vendor
-          </motion.button>
-        )}
       </div>
 
       {/* Search */}
@@ -81,10 +69,9 @@ const Vendors = () => {
             <Building2 className="w-8 h-8" style={{ color: 'hsl(252,87%,70%)' }} />
           </div>
           <p className="font-semibold mb-1" style={{ color: 'hsl(214,32%,80%)' }}>{search ? 'No vendors match your search' : 'No vendors yet'}</p>
-          <p className="text-sm" style={{ color: 'hsl(215,20%,45%)' }}>{search ? 'Try a different name or email' : 'Add your first vendor to get started'}</p>
-          {canManage && !search && (
-            <button onClick={() => navigate('/vendors/new')} className="mt-5 btn-primary text-sm px-5 py-2.5">Add First Vendor</button>
-          )}
+          <p className="text-sm" style={{ color: 'hsl(215,20%,45%)' }}>
+            {search ? 'Try a different name or email' : 'Vendors register themselves via the Vendor Portal'}
+          </p>
         </div>
       ) : (
         <motion.div variants={staggerContainer} initial="initial" animate="animate" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -105,23 +92,15 @@ const Vendors = () => {
                     <StatusBadge status={v.status || 'ACTIVE'} />
                   </div>
                 </div>
-                {canManage && (
+                {isAdmin() && (
                   <div className="flex gap-1.5">
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => navigate(`/vendors/${v.id}/edit`)}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
-                      style={{ background: 'hsla(252,87%,67%,0.1)' }}
-                    >
-                      <Pencil className="w-3.5 h-3.5" style={{ color: 'hsl(252,87%,72%)' }} />
-                    </motion.button>
                     <motion.button
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
                       onClick={() => deleteVendor(v.id)}
                       className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
                       style={{ background: 'hsla(0,84%,60%,0.1)' }}
+                      title="Delete vendor"
                     >
                       <Trash2 className="w-3.5 h-3.5" style={{ color: 'hsl(0,84%,65%)' }} />
                     </motion.button>
