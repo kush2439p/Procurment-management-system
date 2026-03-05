@@ -102,9 +102,7 @@ public class RequisitionController {
                 return ResponseEntity.status(403).body("You can only mark your own requisitions as received.");
             }
 
-            Requisition statusUpdate = new Requisition();
-            statusUpdate.setStatus("RECEIVED");
-            Requisition updated = requisitionService.updateRequisition(id, statusUpdate);
+            Requisition updated = requisitionService.markRequisitionReceived(id);
 
             if (updated.getRequestedBy() != null && updated.getRequestedBy().getEmail() != null) {
                 emailService.sendRequisitionApproved(updated.getRequestedBy().getEmail(),

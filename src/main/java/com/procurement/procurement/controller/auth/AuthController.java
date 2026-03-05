@@ -7,6 +7,7 @@ import com.procurement.procurement.entity.user.User;
 import com.procurement.procurement.entity.user.AccountStatus;
 import com.procurement.procurement.repository.user.RoleRepository;
 import com.procurement.procurement.repository.user.UserRepository;
+import com.procurement.procurement.repository.vendor.VendorAccountRepository;
 import com.procurement.procurement.security.JwtTokenProvider;
 import com.procurement.procurement.service.EmailService;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +28,7 @@ public class AuthController {
         private final AuthenticationManager authenticationManager;
         private final JwtTokenProvider jwtTokenProvider;
         private final UserRepository userRepository;
+        private final VendorAccountRepository vendorAccountRepository;
         private final PasswordEncoder passwordEncoder;
         private final RoleRepository roleRepository;
         private final EmailService emailService;
@@ -34,12 +36,14 @@ public class AuthController {
         public AuthController(AuthenticationManager authenticationManager,
                         JwtTokenProvider jwtTokenProvider,
                         UserRepository userRepository,
+                        VendorAccountRepository vendorAccountRepository,
                         PasswordEncoder passwordEncoder,
                         RoleRepository roleRepository,
                         EmailService emailService) {
                 this.authenticationManager = authenticationManager;
                 this.jwtTokenProvider = jwtTokenProvider;
                 this.userRepository = userRepository;
+                this.vendorAccountRepository = vendorAccountRepository;
                 this.passwordEncoder = passwordEncoder;
                 this.roleRepository = roleRepository;
                 this.emailService = emailService;
@@ -101,8 +105,11 @@ public class AuthController {
                         return ResponseEntity.badRequest().body("Username already exists.");
                 }
 
-                if (request.getEmail() != null && userRepository.findByEmail(request.getEmail()).isPresent()) {
-                        return ResponseEntity.badRequest().body("Email already registered.");
+                if (request.getEmail() != null) {
+                        if (userRepository.findByEmail(request.getEmail()).isPresent() ||
+                                        vendorAccountRepository.findByEmail(request.getEmail()).isPresent()) {
+                                return ResponseEntity.badRequest().body("Email already registered in the system.");
+                        }
                 }
 
                 // ✅ Only ROLE_EMPLOYEE and ROLE_PROCUREMENT_MANAGER can self-register

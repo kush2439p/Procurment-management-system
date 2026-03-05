@@ -26,7 +26,7 @@ const PurchaseOrders = () => {
 
   const filtered = filter === 'ALL' ? pos : pos.filter(p => p.status === filter);
 
-  const filterCounts = ['ALL', 'PENDING', 'APPROVED', 'SHIPPED', 'DELIVERED', 'REJECTED'].map(s => ({
+  const filterCounts = ['ALL', 'PENDING', 'APPROVED', 'SHIPPED', 'DELIVERED', 'RECEIVED', 'REJECTED'].map(s => ({
     label: s,
     count: s === 'ALL' ? pos.length : pos.filter(p => p.status === s).length,
   }));

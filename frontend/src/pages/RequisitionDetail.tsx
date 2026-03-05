@@ -178,7 +178,7 @@ const RequisitionDetail = () => {
         )}
 
         {/* Mark as Received (employee — when APPROVED and goods delivered) */}
-        {req.status === 'APPROVED' && (
+        {employeeView && req.status === 'APPROVED' && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             className="glass-card p-5" style={{ border: '1px solid hsla(210,100%,45%,0.25)', background: 'hsla(210,100%,45%,0.05)' }}>
             <div className="flex items-start gap-3 mb-4">

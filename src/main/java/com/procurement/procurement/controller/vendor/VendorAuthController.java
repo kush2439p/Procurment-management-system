@@ -4,6 +4,7 @@ import com.procurement.procurement.entity.vendor.Vendor;
 import com.procurement.procurement.entity.vendor.VendorAccount;
 import com.procurement.procurement.repository.vendor.VendorAccountRepository;
 import com.procurement.procurement.repository.vendor.VendorRepository;
+import com.procurement.procurement.repository.user.UserRepository;
 import com.procurement.procurement.security.JwtTokenProvider;
 import com.procurement.procurement.service.EmailService;
 import org.springframework.http.ResponseEntity;
@@ -20,17 +21,20 @@ public class VendorAuthController {
 
     private final VendorAccountRepository vendorAccountRepository;
     private final VendorRepository vendorRepository;
+    private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final EmailService emailService;
 
     public VendorAuthController(VendorAccountRepository vendorAccountRepository,
             VendorRepository vendorRepository,
+            UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             JwtTokenProvider jwtTokenProvider,
             EmailService emailService) {
         this.vendorAccountRepository = vendorAccountRepository;
         this.vendorRepository = vendorRepository;
+        this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
         this.emailService = emailService;
@@ -41,8 +45,8 @@ public class VendorAuthController {
     public ResponseEntity<?> register(@RequestBody Map<String, String> request) {
 
         String email = request.get("email");
-        if (vendorAccountRepository.findByEmail(email).isPresent()) {
-            return ResponseEntity.badRequest().body("Email already registered");
+        if (vendorAccountRepository.findByEmail(email).isPresent() || userRepository.findByEmail(email).isPresent()) {
+            return ResponseEntity.badRequest().body("Email already registered in the system.");
         }
 
         String companyName = request.getOrDefault("companyName", "Unknown");

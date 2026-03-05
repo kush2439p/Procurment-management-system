@@ -42,6 +42,11 @@ public class ReportService {
 
             // ── Build filtered PO list ──
             List<PurchaseOrder> pos = purchaseOrderRepository.findAll();
+            if (request.getVendorId() != null) {
+                pos = pos.stream()
+                        .filter(p -> p.getVendor() != null && p.getVendor().getId().equals(request.getVendorId()))
+                        .collect(Collectors.toList());
+            }
             if (request.getPoNumber() != null && !request.getPoNumber().isBlank()) {
                 String q = request.getPoNumber().toLowerCase();
                 pos = pos.stream()

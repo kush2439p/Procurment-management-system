@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/reports")
-@PreAuthorize("hasAnyAuthority('ROLE_PROCUREMENT_MANAGER', 'ROLE_ADMIN')")
 public class ReportController {
 
     private final ReportService reportService;
@@ -26,6 +25,7 @@ public class ReportController {
 
     // ===================== Generate Vendor Report (PDF/Excel)
     // =====================
+    @PreAuthorize("hasAnyAuthority('ROLE_PROCUREMENT_MANAGER', 'ROLE_ADMIN')")
     @PostMapping("/vendor")
     public ResponseEntity<byte[]> generateVendorReport(@RequestBody ReportRequestDTO request,
             @RequestParam(defaultValue = "pdf") String format) {

@@ -6,7 +6,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { useAuth } from '@/context/AuthContext';
 import API from '@/api/axiosInstance';
 import { toast } from 'sonner';
-import { ArrowLeft, FileText, Download, Truck, CheckCircle, Clock } from 'lucide-react';
+import { ArrowLeft, FileText, Download, Truck, CheckCircle, Clock, Box, Package } from 'lucide-react';
 
 const PurchaseOrderDetail = () => {
   const { id } = useParams();
@@ -35,9 +35,10 @@ const PurchaseOrderDetail = () => {
 
   const statusTimeline = [
     { label: 'Created', done: true, icon: Clock },
-    { label: 'Approved', done: ['APPROVED', 'SHIPPED', 'DELIVERED'].includes(po.status), icon: CheckCircle },
-    { label: 'Shipped', done: ['SHIPPED', 'DELIVERED'].includes(po.status), icon: Truck },
-    { label: 'Delivered', done: po.status === 'DELIVERED', icon: CheckCircle },
+    { label: 'Approved', done: ['APPROVED', 'SHIPPED', 'DELIVERED', 'RECEIVED'].includes(po.status), icon: CheckCircle },
+    { label: 'Shipped', done: ['SHIPPED', 'DELIVERED', 'RECEIVED'].includes(po.status), icon: Truck },
+    { label: 'Delivered', done: ['DELIVERED', 'RECEIVED'].includes(po.status), icon: CheckCircle },
+    { label: 'Received', done: po.status === 'RECEIVED', icon: Package },
   ];
 
   return (
@@ -144,6 +145,36 @@ const PurchaseOrderDetail = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Goods Receipt (Employee/Manager action after Vendor Delivery) */}
+        {po.status === 'DELIVERED' && canViewOnly && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            className="glass-card p-5" style={{ border: '1px solid hsla(210,100%,45%,0.25)', background: 'hsla(210,100%,45%,0.05)' }}>
+            <div className="flex items-start gap-3 mb-4">
+              <Box className="w-5 h-5 mt-0.5 shrink-0" style={{ color: 'hsl(210,100%,65%)' }} />
+              <div>
+                <p className="font-semibold text-sm mb-1" style={{ color: 'hsl(210,100%,75%)' }}>Acknowledge Goods Receipt</p>
+                <p className="text-xs" style={{ color: 'hsl(215,20%,50%)' }}>
+                  The vendor has marked this order as <strong style={{ color: 'hsl(160,84%,55%)' }}>DELIVERED</strong>.
+                  Please open the physical shipment to verify the quantities and condition of the items.
+                  Once verified, mark the order as Received to complete the workflow.
+                </p>
+              </div>
+            </div>
+            <motion.button whileTap={{ scale: 0.97 }}
+              onClick={async () => {
+                try {
+                  await API.patch(`/procurement/purchase-order/update-status/${id}?status=RECEIVED`);
+                  toast.success('Goods receipt confirmed. PO marked as RECEIVED.');
+                  setPo({ ...po, status: 'RECEIVED', updatedAt: new Date().toISOString() });
+                } catch { toast.error('Failed to confirm receipt'); }
+              }}
+              className="w-full py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2"
+              style={{ background: 'linear-gradient(135deg, hsl(210,100%,45%), hsl(210,80%,38%))' }}>
+              <CheckCircle className="w-4 h-4" /> Confirm Goods Received
+            </motion.button>
+          </motion.div>
         )}
       </div>
     </AnimatedPage>

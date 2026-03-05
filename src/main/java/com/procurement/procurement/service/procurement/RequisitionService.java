@@ -69,12 +69,29 @@ public class RequisitionService {
         }
         existingReq.setUpdatedAt(LocalDateTime.now());
 
-        if (updatedReq.getItems() != null) {
+        // FIX: The `items` property in updatedReq may be null or empty list depending
+        // on client request.
+        // We only replace the collection if it's explicitly non-null AND non-empty,
+        // to prevent accidentally wiping out existing items during a simple status
+        // update.
+        if (updatedReq.getItems() != null && !updatedReq.getItems().isEmpty()) {
             existingReq.setItems(updatedReq.getItems());
         }
 
         Requisition saved = requisitionRepository.save(existingReq);
         auditService.log("Requisition", saved.getId(), "UPDATE", "Requisition updated successfully");
+        return saved;
+    }
+
+    // ===================== MARK AS RECEIVED =====================
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_PROCUREMENT_MANAGER', 'ROLE_EMPLOYEE')")
+    public Requisition markRequisitionReceived(Long id) {
+        Requisition existingReq = requisitionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Requisition not found with id: " + id));
+        existingReq.setStatus("RECEIVED");
+        existingReq.setUpdatedAt(LocalDateTime.now());
+        Requisition saved = requisitionRepository.save(existingReq);
+        auditService.log("Requisition", saved.getId(), "UPDATE", "Requisition marked as RECEIVED");
         return saved;
     }
 

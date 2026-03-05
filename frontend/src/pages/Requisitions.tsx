@@ -134,7 +134,7 @@ const Requisitions = () => {
                       </div>
                     </td>
                     <td className="text-sm font-semibold" style={{ color: 'hsl(160,84%,55%)' }}>
-                      ${total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      ₹{total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </td>
                     <td><StatusBadge status={r.status} /></td>
                     <td>
